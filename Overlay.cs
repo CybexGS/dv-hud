@@ -256,12 +256,26 @@ namespace DvMod.HeadsUpDisplay
                 maxBrakeFactor);
         }
 
+        private IEnumerable<TrainCar> GetCarsInTrainOriented(TrainCar car)
+        {
+            var cars = car.trainset.cars;
+            var reversed = ((IEnumerable<TrainCar>)cars).Reverse();
+            var firstCar = car.trainset.firstCar;
+            TrainCar? inFront = car.frontCoupler.coupledTo?.train;
+            if (inFront == null)
+                return car == firstCar ? cars : reversed;
+            if (car == firstCar)
+                return reversed;
+
+            // This is now safe.
+            int carIndex = cars.FindIndex(c => c == car);
+            return cars[carIndex - 1] == inFront ? cars : reversed;
+        }
+
         private const char EnDash = '\u2013';
         private void DrawCarList()
         {
-            IEnumerable<TrainCar> cars = PlayerManager.Car.trainset.cars.AsReadOnly();
-            if (!cars.First().IsLoco && cars.Last().IsLoco)
-                cars = cars.Reverse();
+            IEnumerable<TrainCar> cars = GetCarsInTrainOriented(PlayerManager.Car);
 
             var groups = GetCarGroups(cars, !Main.settings.groupCarsByJob);
 
